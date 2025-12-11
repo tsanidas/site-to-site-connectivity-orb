@@ -44,10 +44,10 @@ echo "Constructed repository URL: ${REPO_URL}"
 mkdir ~/.ssh || true
 
 # Scan the SSH key for the repository
-ssh-keyscan -p ${resolved_tunnel_port} ${resolved_tunnel_address} >> ~/.ssh/known_hosts
+ssh-keyscan -p "${resolved_tunnel_port}" "${resolved_tunnel_address}" >> ~/.ssh/known_hosts
 
 # Clone the repository
 echo "Cloning repository from: ${REPO_URL} into: ${CHECKOUT_FOLDER}"
-GIT_TERMINAL_PROMPT=0 git clone $REPO_URL ${CHECKOUT_FOLDER}
+GIT_TERMINAL_PROMPT=0 git clone "$REPO_URL" "${CHECKOUT_FOLDER}"
 
 echo "Repository cloned successfully."
