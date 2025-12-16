@@ -24,6 +24,11 @@ This orb provides commands to:
 - An Ngrok account with API access, which is provided by CircleCI
 - Ngrok API token stored as an environment variable (`NGROK_API_TOKEN`), which is provided by CircleCI
 - An IP policy ID configured in your Ngrok account and stored as an environment variable (`IP_POLICY_ID`), which is provided by CircleCI
+- Creation of a CircleCI context which holds the following environment variables:
+  - NGROK_API_TOKEN
+  - IP_POLICY_ID
+  - TUNNEL_ADDRESS
+  - TUNNEL_PORT
 
 ## Commands
 
@@ -99,13 +104,9 @@ jobs:
     docker:
       - image: cimg/base:current
     steps:
-      - site-to-site-connectivity/setup:
-          ngrok-api-token: $NGROK_API_TOKEN
-          ip-policy-id: $CIRCLE_IP_POLICY_ID
-          tcp-address: "1.tcp.ngrok.io"
-          tcp-port: "28402"
+      - site-to-site-connectivity/setup
       - site-to-site-connectivity/checkout:
-          git-url: git@github.com:your-org/your-repo.git
+          git-url: << pipeline.parameters.git-url >>
       - run:
           name: Build application
           command: |
