@@ -1,8 +1,40 @@
 ---
 description: >
-  Checkout code from a private repository via circleci tunnel
+  Checkout code from a private repository via CircleCI tunnel
+
+parameters:
+  tunnel-address:
+    type: env_var_name
+    description: >
+      Environment variable name containing the tunnel address for the
+      CircleCI tunnel
+    default: "TUNNEL_ADDRESS"
+  tunnel-port:
+    type: env_var_name
+    description: >
+      Environment variable name containing the tunnel port for the
+      CircleCI tunnel
+    default: "TUNNEL_PORT"
+  git-url:
+    type: string
+    description: "Git URL to the repository"
+  checkout-folder:
+    type: string
+    description: "Folder to checkout the repository into"
+    default: "~/project"
+  debug:
+    type: boolean
+    description: "Enable debug mode"
+    default: false
+
 
 steps:
   - run:
+      environment:
+        PARAM_TUNNEL_ADDRESS: << parameters.tunnel-address >>
+        PARAM_TUNNEL_PORT: << parameters.tunnel-port >>
+        GIT_URL: << parameters.git-url >>
+        CHECKOUT_FOLDER: << parameters.checkout-folder >>
+        DEBUG: << parameters.debug >>
       name: Clone repo
       command: <<include(scripts/checkout.sh)>>

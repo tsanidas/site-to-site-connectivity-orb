@@ -1,31 +1,42 @@
 ---
 description: >
-  Setup circleci tunnel for private connectivity
+  Setup CircleCI tunnel for site to site connectivity
 
 parameters:
   ngrok-api-token:
     type: env_var_name
-    description: "Environment variable containing the ngrok API token"
+    description: "Environment variable name containing the Ngrok API token"
     default: NGROK_API_TOKEN
   ip-policy-id:
     type: env_var_name
-    description: "The IP policy ID for circleci tunnel"
-    default: CIRCLE_IP_POLICY_ID
-  tcp-address:
-    type: string
-    description: "TCP address for circleci tunnel"
-    default: "1.tcp.ngrok.io"
-  tcp-port:
-    type: string
-    description: "TCP port for circleci tunnel"
-    default: "28402"
+    description: >
+      Environment variable name containing the IP policy ID for the
+      CircleCI tunnel
+    default: IP_POLICY_ID
+  tunnel-address:
+    type: env_var_name
+    description: >
+      Environment variable name containing the tunnel address for the
+      CircleCI tunnel
+    default: "TUNNEL_ADDRESS"
+  tunnel-port:
+    type: env_var_name
+    description: >
+      Environment variable name containing the tunnel port for the
+      CircleCI tunnel
+    default: "TUNNEL_PORT"
+  debug:
+    type: boolean
+    description: "Enable debug mode"
+    default: false
 
 steps:
   - run:
       environment:
-        NGROK_API_TOKEN: ${<< parameters.ngrok-api-token >>}
-        IP_POLICY_ID: << parameters.ip-policy-id >>
-        TCP_ADDR: << parameters.tcp-address >>
-        TCP_PORT: << parameters.tcp-port >>
-      name: Setup tunnel
+        PARAM_NGROK_API_TOKEN: << parameters.ngrok-api-token >>
+        PARAM_IP_POLICY_ID: << parameters.ip-policy-id >>
+        PARAM_TUNNEL_ADDRESS: << parameters.tunnel-address >>
+        PARAM_TUNNEL_PORT: << parameters.tunnel-port >>
+        DEBUG: << parameters.debug >>
+      name: Setup the CircleCI tunnel
       command: <<include(scripts/setup.sh)>>

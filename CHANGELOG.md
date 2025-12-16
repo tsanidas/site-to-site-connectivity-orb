@@ -9,6 +9,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - Initial orb structure with three commands: setup, checkout, and cleanup
-- Support for circleci tunnel-based private connectivity
+- Support for CircleCI tunnel-based site to site connectivity
 - IP policy rule management for secure access
 - Automatic environment variable exports for downstream steps
