@@ -37,6 +37,8 @@ ip="$(curl --fail https://checkip.amazonaws.com/)"
 
 echo "Setting up the CircleCI tunnel with IP: $ip"
 
+brew install coreutils
+
 if [[ -n "${DEBUG:-}" ]]; then
   echo "DEBUG curl command:"
   echo curl -H 'Accept: application/json' \
@@ -59,7 +61,7 @@ curl -H 'Accept: application/json' \
 if [[ -n "${PARAM_VERIFY_TUNNEL:-}" ]]; then
   echo "Verifying the connection before exiting"
   verified=0
-  for i in {1..${PARAM_VERIFY_TUNNEL_ATTEMPTS:-}}; do
+  for i in $(seq 1 ${PARAM_VERIFY_TUNNEL_ATTEMPTS:-}); do
     echo "Attempt $i"
     timeout 1s nc -v "${resolved_tunnel_address}" "${resolved_tunnel_port}"
     # When timeout is reached the connection is not immediately closed and we can assume the connection is working
