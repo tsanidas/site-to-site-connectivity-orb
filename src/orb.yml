@@ -107,6 +107,7 @@ commands:
 
                     echo "Repository cloned successfully."
                 environment:
+                    CHECKOUT_DEPTH: << parameters.checkout-depth >>
                     CHECKOUT_FOLDER: << parameters.checkout-folder >>
                     DEBUG: << parameters.debug >>
                     GIT_URL: << parameters.git-url >>
