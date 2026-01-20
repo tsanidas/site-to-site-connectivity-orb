@@ -60,7 +60,7 @@ if [[ -n "${DEBUG:-}" ]]; then
     -H "Authorization: Bearer ${resolved_ngrok_api_token}" \
     -H "Ngrok-Version: 2" \
     --fail -o "$dp_file" \
-    "https://api.ngrok.com/ip_policies?limit=10"
+    "https://api.ngrok.com/endpoints?limit=10"
     cat ${dp_file} | base64
     echo ""
 fi
