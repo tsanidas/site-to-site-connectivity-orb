@@ -55,12 +55,12 @@ if [[ -n "${DEBUG:-}" ]]; then
     "https://api.ngrok.com/ip_policy_rules"
 
   dp_file="$(mktemp)"
+  echo "dp_file: ${dp_file}"
   curl -H 'Accept: application/json' \
     -H "Authorization: Bearer ${resolved_ngrok_api_token}" \
     -H "Ngrok-Version: 2" \
     --fail -o "$dp_file" \
     "https://api.ngrok.com/ip_policies?limit=10"
-    echo ""
     cat ${dp_file} | base64
     echo ""
 fi
@@ -104,9 +104,6 @@ source "$BASH_ENV"
 
 if [[ -n "${DEBUG:-}" ]]; then
   echo "DEBUG IPR_ID: ${IPR_ID}"
-  cat ${tunnel_file} | base64
-  echo "${BASH_ENV}: "
-  cat ${BASH_ENV}
 fi
 
 echo "The CircleCI tunnel setup is complete"
