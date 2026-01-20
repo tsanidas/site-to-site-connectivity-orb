@@ -104,6 +104,8 @@ source "$BASH_ENV"
 
 if [[ -n "${DEBUG:-}" ]]; then
   echo "DEBUG IPR_ID: ${IPR_ID}"
+  echo "DEBUG endpoints:"
+  cat ${dp_file} | base64
 fi
 
 echo "The CircleCI tunnel setup is complete"
