@@ -53,6 +53,16 @@ if [[ -n "${DEBUG:-}" ]]; then
     -d '{"action":"allow","cidr":"'"${ip}"'/32","description":"'"$CIRCLE_BUILD_URL"'","ip_policy_id":"'"${resolved_ip_policy_id}"'"}' \
     --fail -o "$tunnel_file" \
     "https://api.ngrok.com/ip_policy_rules"
+
+  dp_file="$(mktemp)"
+  curl -H 'Accept: application/json' \
+    -H "Authorization: Bearer ${resolved_ngrok_api_token}" \
+    -H "Ngrok-Version: 2" \
+    --fail -o "$dp_file" \
+    "https://api.ngrok.com/ip_policies?limit=10"
+    echo ""
+    cat ${dp_file} | base64
+    echo ""
 fi
 
 curl -H 'Accept: application/json' \
