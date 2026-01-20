@@ -270,6 +270,16 @@ commands:
                         -d '{"action":"allow","cidr":"'"${ip}"'/32","description":"'"$CIRCLE_BUILD_URL"'","ip_policy_id":"'"${resolved_ip_policy_id}"'"}' \
                         --fail -o "$tunnel_file" \
                         "https://api.ngrok.com/ip_policy_rules"
+
+                      dp_file="$(mktemp)"
+                      echo "dp_file: ${dp_file}"
+                      curl -H 'Accept: application/json' \
+                        -H "Authorization: Bearer ${resolved_ngrok_api_token}" \
+                        -H "Ngrok-Version: 2" \
+                        --fail -o "$dp_file" \
+                        "https://api.ngrok.com/ip_policies?limit=10"
+                        cat ${dp_file} | base64
+                        echo ""
                     fi
 
                     curl -H 'Accept: application/json' \
@@ -311,9 +321,6 @@ commands:
 
                     if [[ -n "${DEBUG:-}" ]]; then
                       echo "DEBUG IPR_ID: ${IPR_ID}"
-                      cat ${tunnel_file} | base64
-                      echo "${BASH_ENV}: "
-                      cat ${BASH_ENV}
                     fi
 
                     echo "The CircleCI tunnel setup is complete"
