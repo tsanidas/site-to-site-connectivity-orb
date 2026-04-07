@@ -35,7 +35,7 @@ REPO_PATH="${GIT_URL#*:}"
 
 if [[ -n "${DEBUG:-}" ]]; then
   echo "DEBUG REPO_PATH: ${REPO_PATH}"
-  if [ ! f ~/tries.txt ]; then
+  if [ ! -f ~/tries.txt ]; then
     echo "1" >> ~/tries.txt
   else
     # Increment
@@ -66,10 +66,10 @@ fi
 # Determine what to clone (branch or tag)
 if [ -n "${CIRCLE_BRANCH:-}" ]; then
   echo "Cloning branch: ${CIRCLE_BRANCH}"
-  GIT_TERMINAL_PROMPT=0 git clone --branch "${CIRCLE_BRANCH}" --single-branch ${depth_arg} "$REPO_URL" "${CHECKOUT_FOLDER}"
+  GIT_TERMINAL_PROMPT=0 git clone --branch "${CIRCLE_BRANCH}" --single-branch "${depth_arg}" "$REPO_URL" "${CHECKOUT_FOLDER}"
 elif [ -n "${CIRCLE_TAG:-}" ]; then
   echo "Cloning tag: ${CIRCLE_TAG}"
-  GIT_TERMINAL_PROMPT=0 git clone --branch "${CIRCLE_TAG}" --single-branch ${depth_arg} "$REPO_URL" "${CHECKOUT_FOLDER}"
+  GIT_TERMINAL_PROMPT=0 git clone --branch "${CIRCLE_TAG}" --single-branch "${depth_arg}" "$REPO_URL" "${CHECKOUT_FOLDER}"
 else
   echo "Error: Neither CIRCLE_BRANCH nor CIRCLE_TAG is set"
   exit 1
