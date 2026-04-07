@@ -10,6 +10,7 @@ commands:
             Checkout code from a private repository via CircleCI tunnel
         parameters:
             checkout-depth:
+                default: 1
                 description: Depth to pass to `git clone` command as `--depth` parameter
                 type: integer
             checkout-folder:
@@ -35,6 +36,7 @@ commands:
                 type: env_var_name
         steps:
             - run:
+                auto_rerun_delay: 10s
                 command: |
                     #!/bin/bash
 
@@ -79,7 +81,7 @@ commands:
                     echo "Constructed repository URL: ${REPO_URL}"
 
                     # Create the SSH directory if it doesn't exist
-                    mkdir ~/.ssh || true
+                    [ ! -d ~/.ssh ] && mkdir -p ~/.ssh
 
                     # Scan the SSH key for the repository
                     ssh-keyscan -p "${resolved_tunnel_port}" "${resolved_tunnel_address}" >> ~/.ssh/known_hosts
@@ -96,10 +98,10 @@ commands:
                     # Determine what to clone (branch or tag)
                     if [ -n "${CIRCLE_BRANCH:-}" ]; then
                       echo "Cloning branch: ${CIRCLE_BRANCH}"
-                      GIT_TERMINAL_PROMPT=0 git clone --branch ${CIRCLE_BRANCH} --single-branch ${depth_arg} "$REPO_URL" "${CHECKOUT_FOLDER}"
+                      GIT_TERMINAL_PROMPT=0 git clone --branch "${CIRCLE_BRANCH}" --single-branch ${depth_arg} "$REPO_URL" "${CHECKOUT_FOLDER}"
                     elif [ -n "${CIRCLE_TAG:-}" ]; then
                       echo "Cloning tag: ${CIRCLE_TAG}"
-                      GIT_TERMINAL_PROMPT=0 git clone --branch ${CIRCLE_TAG} --single-branch ${depth_arg} "$REPO_URL" "${CHECKOUT_FOLDER}"
+                      GIT_TERMINAL_PROMPT=0 git clone --branch "${CIRCLE_TAG}" --single-branch ${depth_arg} "$REPO_URL" "${CHECKOUT_FOLDER}"
                     else
                       echo "Error: Neither CIRCLE_BRANCH nor CIRCLE_TAG is set"
                       exit 1
@@ -113,6 +115,7 @@ commands:
                     GIT_URL: << parameters.git-url >>
                     PARAM_TUNNEL_ADDRESS: << parameters.tunnel-address >>
                     PARAM_TUNNEL_PORT: << parameters.tunnel-port >>
+                max_auto_reruns: 3
                 name: Clone repo
     cleanup:
         description: |
@@ -122,10 +125,6 @@ commands:
                 default: false
                 description: Enable debug mode
                 type: boolean
-            ngrok-api-token:
-                default: NGROK_API_TOKEN
-                description: Environment variable name containing the Ngrok API token
-                type: env_var_name
         steps:
             - run:
                 command: |
@@ -136,46 +135,47 @@ commands:
                     # Check if environment variables are set
                     missing=0
 
-                    # Resolve indirect values (PARAM_* contains the variable name to read)
-                    resolved_ngrok_api_token="${!PARAM_NGROK_API_TOKEN:-}"
-
-                    if [ -z "${resolved_ngrok_api_token}" ]; then
-                      echo "Error: ${PARAM_NGROK_API_TOKEN} is not set or empty"
+                    if [ -z "${CIRCLE_OIDC_TOKEN:-}" ]; then
+                      echo "Error: CIRCLE_OIDC_TOKEN is not set."
                       missing=1
                     fi
-                    if [ -z "${IPR_ID:-}" ]; then
-                      echo "Error: IPR_ID is not set or empty"
+                    if [ -z "${EXECUTOR_IP:-}" ]; then
+                      echo "Error: EXECUTOR_IP is not set or empty"
                       missing=1
                     fi
                     if [ "$missing" -ne 0 ]; then
                       exit 1
                     fi
 
-                    echo "Cleaning up CircleCI tunnel with IPR_ID: ${IPR_ID}"
+                    echo "Cleaning up CircleCI tunnel for IP: ${EXECUTOR_IP}"
 
                     if [[ -n "${DEBUG:-}" ]]; then
                       echo "DEBUG curl command:"
                       echo curl -H 'Accept: application/json' \
-                        -H "Authorization: Bearer ${resolved_ngrok_api_token}" \
+                        -H "Authorization: Bearer \${CIRCLE_OIDC_TOKEN}" \
                         -H "Content-Type: application/json" \
-                        -H "Ngrok-Version: 2" \
-                        -X DELETE \
-                        --fail \
-                        "https://api.ngrok.com/ip_policy_rules/${IPR_ID}"
+                        -d '{"ip":"'"${EXECUTOR_IP}"'"}' \
+                        "https://internal.circleci.com/api/private/site-to-site/ip-policy/remove"
                     fi
 
-                    curl -H 'Accept: application/json' \
-                      -H "Authorization: Bearer ${resolved_ngrok_api_token}" \
+                    http_code=$(curl -s -o /dev/null -w "%{http_code}" \
+                      -H 'Accept: application/json' \
+                      -H "Authorization: Bearer ${CIRCLE_OIDC_TOKEN}" \
                       -H "Content-Type: application/json" \
-                      -H "Ngrok-Version: 2" \
-                      -X DELETE \
-                      --fail \
-                      "https://api.ngrok.com/ip_policy_rules/${IPR_ID}"
+                      -d '{"ip":"'"${EXECUTOR_IP}"'"}' \
+                      "https://internal.circleci.com/api/private/site-to-site/ip-policy/remove")
+
+                    if [ "$http_code" -ne 200 ]; then
+                      echo "Error: IP removal failed (HTTP ${http_code})"
+                      if [ "$http_code" -eq 404 ]; then
+                        echo "This typically indicates an OIDC authentication issue."
+                      fi
+                      exit 1
+                    fi
 
                     echo "CircleCI tunnel cleanup complete"
                 environment:
                     DEBUG: << parameters.debug >>
-                    PARAM_NGROK_API_TOKEN: << parameters.ngrok-api-token >>
                 name: Cleanup tunnel
                 when: always
     setup:
@@ -186,15 +186,14 @@ commands:
                 default: false
                 description: Enable debug mode
                 type: boolean
-            ip-policy-id:
-                default: IP_POLICY_ID
-                description: |
-                    Environment variable name containing the IP policy ID for the CircleCI tunnel
-                type: env_var_name
-            ngrok-api-token:
-                default: NGROK_API_TOKEN
-                description: Environment variable name containing the Ngrok API token
-                type: env_var_name
+            registration-retry-attempts:
+                default: 5
+                description: Number of retry attempts for IP registration on 500 errors
+                type: integer
+            registration-retry-delay:
+                default: 30
+                description: Seconds to wait between IP registration retry attempts
+                type: integer
             tunnel-address:
                 default: TUNNEL_ADDRESS
                 description: |
@@ -329,8 +328,8 @@ commands:
                     echo "The CircleCI tunnel setup is complete"
                 environment:
                     DEBUG: << parameters.debug >>
-                    PARAM_IP_POLICY_ID: << parameters.ip-policy-id >>
-                    PARAM_NGROK_API_TOKEN: << parameters.ngrok-api-token >>
+                    PARAM_REG_RETRY_ATTEMPTS: << parameters.registration-retry-attempts >>
+                    PARAM_REG_RETRY_DELAY: << parameters.registration-retry-delay >>
                     PARAM_TUNNEL_ADDRESS: << parameters.tunnel-address >>
                     PARAM_TUNNEL_PORT: << parameters.tunnel-port >>
                     PARAM_VERIFY_TUNNEL: << parameters.verify-tunnel >>
