@@ -35,7 +35,15 @@ REPO_PATH="${GIT_URL#*:}"
 
 if [[ -n "${DEBUG:-}" ]]; then
   echo "DEBUG REPO_PATH: ${REPO_PATH}"
-fi
+  if [ ! f ~/tries.txt ]; then
+    echo "1" >> ~/tries.txt
+  else
+    # Increment
+    tries=$(cat ~/tries.txt)
+    tries=$((tries + 1))
+    echo "${tries}" > ~/tries.txt
+  fi
+ fi
 
 REPO_URL="ssh://git@${resolved_tunnel_address}:${resolved_tunnel_port}/${REPO_PATH}"
 echo "Constructed repository URL: ${REPO_URL}"
@@ -68,3 +76,7 @@ else
 fi
 
 echo "Repository cloned successfully."
+if [[ -n "${DEBUG:-}" && -f ~/tries.txt ]]; then
+  tries=$(cat ~/tries.txt)
+  echo "Cloning took $(cat ~/tries.txt) attempts"
+fi
