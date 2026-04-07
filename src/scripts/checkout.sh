@@ -78,7 +78,5 @@ fi
 echo "Repository cloned successfully."
 if [[ -n "${DEBUG:-}" && -f ~/tries.txt ]]; then
   tries=$(cat ~/tries.txt)
-  if [[ ${tries} -gt 1 ]]; then
-    echo "Cloning took ${tries} attempts"
-  fi
+  echo "Cloning took $(cat ~/tries.txt) attempts"
 fi
