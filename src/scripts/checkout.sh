@@ -36,7 +36,7 @@ REPO_PATH="${GIT_URL#*:}"
 if [[ -n "${DEBUG:-}" ]]; then
   echo "DEBUG REPO_PATH: ${REPO_PATH}"
   source $BASH_ENV
-  if [ -z "#{CCI_STS_CO_TRIES:+x}" ]; then
+  if [[ -z "${CCI_STS_CO_TRIES:-}" ]]; then
     echo "export CCI_STS_CO_TRIES=1" >> $BASH_ENV
     CCI_STS_CO_TRIES=1
   else
