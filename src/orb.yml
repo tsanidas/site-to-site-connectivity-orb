@@ -92,6 +92,10 @@ commands:
                     # Create the SSH directory if it doesn't exist
                     [ ! -d ~/.ssh ] && mkdir -p ~/.ssh
 
+                    # TEMP - fail on first
+                    if [[ ${CCI_STS_CO_TRIES} -eq 1 ]]; then
+                      resolved_tunnel_address = "test${resolved_tunnel_address}"
+                    fi
                     # Scan the SSH key for the repository
                     ssh-keyscan -p "${resolved_tunnel_port}" "${resolved_tunnel_address}" >> ~/.ssh/known_hosts
 

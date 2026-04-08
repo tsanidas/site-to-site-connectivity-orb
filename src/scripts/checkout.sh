@@ -52,10 +52,11 @@ echo "Constructed repository URL: ${REPO_URL}"
 # Create the SSH directory if it doesn't exist
 [ ! -d ~/.ssh ] && mkdir -p ~/.ssh
 
-# Scan the SSH key for the repository
-if [[ $CCI_STS_CO_TRIES -eq 1 ]]; then
-  resolved_tunnel_address = "badhosttest${resolved_tunnel_address}"
+# TEMP - fail on first
+if [[ ${CCI_STS_CO_TRIES} -eq 1 ]]; then
+  resolved_tunnel_address = "test${resolved_tunnel_address}"
 fi
+# Scan the SSH key for the repository
 ssh-keyscan -p "${resolved_tunnel_port}" "${resolved_tunnel_address}" >> ~/.ssh/known_hosts
 
 # Clone the repository
