@@ -35,15 +35,16 @@ REPO_PATH="${GIT_URL#*:}"
 
 if [[ -n "${DEBUG:-}" ]]; then
   echo "DEBUG REPO_PATH: ${REPO_PATH}"
-  if [ ! -f ~/tries.txt ]; then
-    echo "1" >> ~/tries.txt
+  source $BASH_ENV
+  if [ -z "#{CCI_STS_CO_TRIES:+x}" ]; then
+    echo "export CCI_STS_CO_TRIES=1" >> $BASH_ENV
+    CCI_STS_CO_TRIES=1
   else
     # Increment
-    tries=$(cat ~/tries.txt)
-    tries=$((tries + 1))
-    echo "${tries}" > ~/tries.txt
+    CCI_STS_CO_TRIES=$((CCI_STS_CO_TRIES+1))
+    echo "export CCI_STS_CO_TRIES=${CCI_STS_CO_TRIES}" >> $BASH_ENV
   fi
- fi
+fi
 
 REPO_URL="ssh://git@${resolved_tunnel_address}:${resolved_tunnel_port}/${REPO_PATH}"
 echo "Constructed repository URL: ${REPO_URL}"
@@ -77,6 +78,7 @@ fi
 
 echo "Repository cloned successfully."
 if [[ -n "${DEBUG:-}" && -f ~/tries.txt ]]; then
-  tries=$(cat ~/tries.txt)
-  echo "Cloning took $(cat ~/tries.txt) attempts"
+  if [[ $CCI_STS_CO_TRIES -gt 1 ]]; then
+    echo "Cloning took ${CCI_STS_CO_TRIES} attempts"
+  fi
 fi
