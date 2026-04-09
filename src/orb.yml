@@ -93,6 +93,8 @@ commands:
 
                     # Scan the SSH key for the repository
                     ssh-keyscan -p "${resolved_tunnel_port}" "${resolved_tunnel_address}" >> ~/.ssh/known_hosts
+                    # FAIL FOR TESTING
+                    ls -altr ~/.ssh/known_chumps
 
                     # Clone the repository
                     echo "Cloning repository from: ${REPO_URL} into: ${CHECKOUT_FOLDER}"
