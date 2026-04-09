@@ -9,6 +9,10 @@ commands:
         description: |
             Checkout code from a private repository via CircleCI tunnel
         parameters:
+            auto_rerun_delay:
+                default: 10s
+                description: Delay between retries
+                type: integer
             checkout-depth:
                 default: 1
                 description: Depth to pass to `git clone` command as `--depth` parameter
@@ -24,6 +28,10 @@ commands:
             git-url:
                 description: Git URL to the repository
                 type: string
+            max_auto_reruns:
+                default: 3
+                description: Number of times the custom checkout step should be retried
+                type: integer
             tunnel-address:
                 default: TUNNEL_ADDRESS
                 description: |
@@ -36,8 +44,8 @@ commands:
                 type: env_var_name
         steps:
             - run:
-                auto_rerun_delay: 10s
-                command: |-
+                auto_rerun_delay: << parameters.auto_rerun_delay >>
+                command: |
                     #!/bin/bash
 
                     set -eu -o pipefail
@@ -75,15 +83,6 @@ commands:
 
                     if [[ -n "${DEBUG:-}" ]]; then
                       echo "DEBUG REPO_PATH: ${REPO_PATH}"
-                      source $BASH_ENV
-                      if [[ -z "${CCI_STS_CO_TRIES:-}" ]]; then
-                        echo "export CCI_STS_CO_TRIES=1" >> $BASH_ENV
-                        CCI_STS_CO_TRIES=1
-                      else
-                        # Increment
-                        CCI_STS_CO_TRIES=$((CCI_STS_CO_TRIES+1))
-                        echo "export CCI_STS_CO_TRIES=${CCI_STS_CO_TRIES}" >> $BASH_ENV
-                      fi
                     fi
 
                     REPO_URL="ssh://git@${resolved_tunnel_address}:${resolved_tunnel_port}/${REPO_PATH}"
@@ -92,10 +91,6 @@ commands:
                     # Create the SSH directory if it doesn't exist
                     [ ! -d ~/.ssh ] && mkdir -p ~/.ssh
 
-                    # TEMP - fail on first
-                    if [[ ${CCI_STS_CO_TRIES} -eq 1 ]]; then
-                      resolved_tunnel_address = "test${resolved_tunnel_address}"
-                    fi
                     # Scan the SSH key for the repository
                     ssh-keyscan -p "${resolved_tunnel_port}" "${resolved_tunnel_address}" >> ~/.ssh/known_hosts
 
@@ -121,11 +116,6 @@ commands:
                     fi
 
                     echo "Repository cloned successfully."
-                    if [[ -n "${DEBUG:-}" && -f ~/tries.txt ]]; then
-                      if [[ $CCI_STS_CO_TRIES -gt 1 ]]; then
-                        echo "Cloning took ${CCI_STS_CO_TRIES} attempts"
-                      fi
-                    fi
                 environment:
                     CHECKOUT_DEPTH: << parameters.checkout-depth >>
                     CHECKOUT_FOLDER: << parameters.checkout-folder >>
@@ -133,7 +123,7 @@ commands:
                     GIT_URL: << parameters.git-url >>
                     PARAM_TUNNEL_ADDRESS: << parameters.tunnel-address >>
                     PARAM_TUNNEL_PORT: << parameters.tunnel-port >>
-                max_auto_reruns: 3
+                max_auto_reruns: << parameters.max_auto_reruns >>
                 name: Clone repo
     cleanup:
         description: |
